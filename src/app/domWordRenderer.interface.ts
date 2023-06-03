@@ -1,8 +1,7 @@
-import { HandleChooseLetter, Statistics } from "./wordTrainer.interface";
+import { HandleChooseLetter, Statistics, Task } from "./wordTrainer.interface";
 
 export interface State {
-  answer: string;
-  keyboardLetters: string;
+  task: Task,
   currentStep: number;
   stepsCount: number;
 }

@@ -36,7 +36,7 @@ export class DOMWordRenderer implements IWordRenderer {
       document.removeEventListener("keydown", this.handleKeyDown);
 
       this.keyboardContainer.innerHTML = "";
-      const restLetters = correctWord.slice(this.state.answer.length);
+      const restLetters = correctWord.slice(this.state.task.answer.length);
       restLetters.split("").forEach((letter) => {
         this.addAnswerLetterElementToContainer(letter);
       });
@@ -71,7 +71,7 @@ export class DOMWordRenderer implements IWordRenderer {
   }
 
   private renderAnswer(): void {
-    this.state.answer.split("").forEach((letter) => {
+    this.state.task.answer.split("").forEach((letter) => {
       this.addAnswerLetterElementToContainer(letter);
     });
   }
@@ -93,9 +93,9 @@ export class DOMWordRenderer implements IWordRenderer {
     keyboardRow.classList.add(ClassNames.Keyboard);
     keyboardRow.addEventListener("click", this.hadleKeyboardClick);
 
-    for (let i = 0; i < this.state.keyboardLetters.length; i++) {
+    for (let i = 0; i < this.state.task.shuffledLetters.length; i++) {
       const button = this.createLetterButtonElement(
-        this.state.keyboardLetters[i]
+        this.state.task.shuffledLetters[i]
       );
       keyboardRow.appendChild(button);
     }

@@ -48,11 +48,10 @@ export class WordTrainer implements IWordTrainer {
     this.checkCache();
 
     this.wordRenderer.initScene({
-      answer: this.currentTask.answer,
-      keyboardLetters: this.currentTask.shuffledLetters,
       currentStep: this.state.currentStep + 1,
       stepsCount: this.options.wordCount,
       handleChooseLetter: this.handleChooseLetter,
+      task: this.currentTask,
     });
   }
 
@@ -174,10 +173,9 @@ export class WordTrainer implements IWordTrainer {
 
   private nextScene() {
     this.wordRenderer.nextScene({
-      answer: this.currentTask.answer,
-      keyboardLetters: this.currentTask.shuffledLetters,
       currentStep: this.state.currentStep + 1,
       stepsCount: this.options.wordCount,
+      task: this.currentTask,
     });
   }
 
