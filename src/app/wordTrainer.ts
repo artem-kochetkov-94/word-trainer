@@ -4,8 +4,9 @@ import {
   Statistics,
   HandleChooseLetter,
   WordTrainerState,
-} from "./word-trainer.interface";
-import { IWordRenderer } from "./dom-word-renderer";
+  Task,
+} from "./wordTrainer.interface";
+import { IWordRenderer } from "./domWordRenderer.interface";
 import { removeCharacterAtIndex } from "./lib/removeCharacterAtIndex";
 import { CACHE_NAME } from "./lib/constants";
 
@@ -23,16 +24,10 @@ export class WordTrainer implements IWordTrainer {
     }
   ) {
     const words = this.wordProvider.getRandomWords(this.options.wordCount);
-    const tasks = words.map((word) => ({
-      correctWord: word,
-      shuffledLetters: this.wordShuffler.shuffle(word),
-      answer: "",
-      errorCount: 0,
-    }));
 
     this.state = {
       currentStep: 0,
-      tasks: tasks,
+      tasks: words.map(this.createTask),
     };
   }
 
@@ -40,12 +35,21 @@ export class WordTrainer implements IWordTrainer {
     return this.state.tasks[this.state.currentStep];
   }
 
+  private createTask = (word: string): Task => {
+    return {
+      correctWord: word,
+      shuffledLetters: this.wordShuffler.shuffle(word),
+      answer: "",
+      errorCount: 0,
+    };
+  };
+
   public start(): void {
     this.checkCache();
 
     this.wordRenderer.initScene({
       answer: this.currentTask.answer,
-      letters: this.currentTask.shuffledLetters,
+      keyboardLetters: this.currentTask.shuffledLetters,
       currentStep: this.state.currentStep + 1,
       stepsCount: this.options.wordCount,
       handleChooseLetter: this.handleChooseLetter,
@@ -89,24 +93,24 @@ export class WordTrainer implements IWordTrainer {
       this.currentTask.correctWord[this.currentTask.answer.length];
 
     if (nextCorrectLetter === letter) {
-      this.handleSuccess(letter, letterIndex, successCallback);
+      this.handleSuccessAction(letter, letterIndex, successCallback);
     } else {
-      this.handleFailure(failureCallback);
+      this.handleFailureAction(failureCallback);
     }
   };
 
   private handleUnknownLetter() {
-    this.handleFailure();
+    this.handleFailureAction();
   }
 
-  private handleSuccess(
+  private handleSuccessAction(
     letter: string,
     letterIndex: number,
     cb?: Function
   ): void {
     this.currentTask.answer += letter;
 
-    // remove letter from rest letters
+    // remove letter from keyabord letters
     this.currentTask.shuffledLetters = removeCharacterAtIndex(
       this.currentTask.shuffledLetters,
       letterIndex
@@ -116,14 +120,14 @@ export class WordTrainer implements IWordTrainer {
     this.next();
   }
 
-  private handleFailure(cb?: Function): void {
+  private handleFailureAction(cb?: Function): void {
     this.currentTask.errorCount += 1;
     cb && cb();
     this.next();
   }
 
   private next(): void {
-    this.cacheManager.set(CACHE_NAME, JSON.stringify(this.state));
+    this.saveCache();
     const { answer, errorCount, correctWord } = this.currentTask;
 
     if (answer !== correctWord && errorCount < this.options.maxErrors) {
@@ -137,45 +141,57 @@ export class WordTrainer implements IWordTrainer {
     const { answer, errorCount, correctWord } = this.currentTask;
 
     if (answer === correctWord) {
-      if (this.isFinalStep()) {
-        this.finishTraining();
-      } else {
-        this.state.currentStep += 1;
-        this.cacheManager.set(CACHE_NAME, JSON.stringify(this.state));
-        this.wordRenderer.initScene({
-          answer: this.currentTask.answer,
-          letters: this.currentTask.shuffledLetters,
-          currentStep: this.state.currentStep + 1,
-          stepsCount: this.options.wordCount,
-          handleChooseLetter: this.handleChooseLetter,
-        });
-      }
+      this.processedTaskBySuccessResult();
     } else if (errorCount === this.options.maxErrors) {
-      if (this.isFinalStep()) {
-        // show results
-        this.finishTraining();
-      } else {
-        // show results
-        this.state.currentStep += 1;
-        this.cacheManager.set(CACHE_NAME, JSON.stringify(this.state));
-        this.wordRenderer.initScene({
-          answer: this.currentTask.answer,
-          letters: this.currentTask.shuffledLetters,
-          currentStep: this.state.currentStep + 1,
-          stepsCount: this.options.wordCount,
-          handleChooseLetter: this.handleChooseLetter,
-        });
-      }
+      this.processedTaskByFailureResult();
     }
+  }
+
+  private processedTaskBySuccessResult() {
+    if (this.isFinalStep()) {
+      this.finishTraining();
+      return;
+    }
+
+    this.state.currentStep += 1;
+    this.cacheManager.set(CACHE_NAME, JSON.stringify(this.state));
+    this.nextScene();
+  }
+
+  private async processedTaskByFailureResult() {
+    if (this.isFinalStep()) {
+      await this.wordRenderer.handleErrorScene(this.currentTask.correctWord);
+      this.finishTraining();
+      return;
+    }
+
+    await this.wordRenderer.handleErrorScene(this.currentTask.correctWord);
+
+    this.state.currentStep += 1;
+    this.cacheManager.set(CACHE_NAME, JSON.stringify(this.state));
+    this.nextScene();
+  }
+
+  private nextScene() {
+    this.wordRenderer.nextScene({
+      answer: this.currentTask.answer,
+      keyboardLetters: this.currentTask.shuffledLetters,
+      currentStep: this.state.currentStep + 1,
+      stepsCount: this.options.wordCount,
+    });
+  }
+
+  private isFinalStep(): boolean {
+    return this.state.currentStep === this.options.wordCount - 1;
+  }
+
+  private saveCache(): void {
+    this.cacheManager.set(CACHE_NAME, JSON.stringify(this.state));
   }
 
   private finishTraining() {
     this.wordRenderer.finishTraining(this.getStatistics());
     this.cacheManager.delete(CACHE_NAME);
-  }
-
-  private isFinalStep(): boolean {
-    return this.state.currentStep === this.options.wordCount - 1;
   }
 
   private getStatistics(): Statistics {

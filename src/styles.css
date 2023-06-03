@@ -21,12 +21,16 @@
   }
 }
 
-#js_answer .answer-letter {
+.answer .answer-letter {
   animation-name: success;
   animation-duration: 0.5s;
   background: #29a545;
 }
 
 .error {
+  background: #ad2539;
+}
+
+.answer.error .answer-letter {
   background: #ad2539;
 }

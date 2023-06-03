@@ -1,4 +1,4 @@
-import { IWordShuffler } from "./word-shuffler.interface";
+import { IWordShuffler } from "./wordShuffler.interface";
 
 export class WordShuffler implements IWordShuffler {
   public shuffle(word: string): string {

@@ -1,37 +1,55 @@
-import { ClassNames } from "./lib/constants";
-import { State, Options } from "./dom-word-renderer.interface";
-import { HandleChooseLetter, Statistics } from "./word-trainer.interface";
+import { ClassNames, StatisticsDictionary } from "./lib/constants";
+import { State, Options, IWordRenderer } from "./domWordRenderer.interface";
+import { HandleChooseLetter, Statistics } from "./wordTrainer.interface";
 import { getChildIndex } from "./lib/getChildIndex";
 import { KeyCode } from "../types/keyCode";
-
-export abstract class WordRenderer {
-  public abstract initScene(options: Options): void;
-  public abstract finishTraining(statistics: Statistics): void;
-}
-
-export interface IWordRenderer extends WordRenderer {}
 
 export class DOMWordRenderer implements IWordRenderer {
   private handleChooseLetter: HandleChooseLetter;
   private state: State;
-
   private isAnimationProcessed = false;
 
   constructor(
     private answerContainer: HTMLElement,
     private keyboardContainer: HTMLElement,
     private currentStepContainer: HTMLElement,
-    private totalStepsCountContainer: HTMLElement,
+    private totalStepsContainer: HTMLElement,
     private statisticsContainer: HTMLElement
-  ) {
-    document.addEventListener("keydown", this.handleKeyDown);
-  }
+  ) {}
 
   public initScene({ handleChooseLetter, ...options }: Options): void {
     this.initState(options);
-
     this.handleChooseLetter = handleChooseLetter;
 
+    this.renderScene();
+    document.addEventListener("keydown", this.handleKeyDown);
+  }
+
+  public nextScene(options: State): void {
+    this.initState(options);
+    this.renderScene();
+  }
+
+  public async handleErrorScene(correctWord: string): Promise<void> {
+    return new Promise<void>((resolve) => {
+      this.answerContainer.classList.add("error");
+      document.removeEventListener("keydown", this.handleKeyDown);
+
+      this.keyboardContainer.innerHTML = "";
+      const restLetters = correctWord.slice(this.state.answer.length);
+      restLetters.split("").forEach((letter) => {
+        this.addAnswerLetterElementToContainer(letter);
+      });
+
+      setTimeout(() => {
+        this.answerContainer.classList.remove("error");
+        document.addEventListener("keydown", this.handleKeyDown);
+        resolve();
+      }, 1500);
+    });
+  }
+
+  private renderScene() {
     this.clearScene();
     this.renderHeader();
     this.renderAnswer();
@@ -49,13 +67,21 @@ export class DOMWordRenderer implements IWordRenderer {
 
   private renderHeader(): void {
     this.currentStepContainer.innerHTML = String(this.state.currentStep);
-    this.totalStepsCountContainer.innerHTML = String(this.state.stepsCount);
+    this.totalStepsContainer.innerHTML = String(this.state.stepsCount);
   }
 
   private renderAnswer(): void {
     this.state.answer.split("").forEach((letter) => {
       this.addAnswerLetterElementToContainer(letter);
     });
+  }
+
+  private addAnswerLetterElementToContainer(letter: string) {
+    const letterEl = document.createElement("div");
+    letterEl.classList.add(ClassNames.AnswerLetter);
+    letterEl.textContent = letter;
+
+    this.answerContainer.appendChild(letterEl);
   }
 
   private renderKeyboard(): void {
@@ -65,10 +91,12 @@ export class DOMWordRenderer implements IWordRenderer {
   private createKeyboardContainer(): HTMLDivElement {
     const keyboardRow = document.createElement("div");
     keyboardRow.classList.add(ClassNames.Keyboard);
-    keyboardRow.addEventListener("click", (e) => this.hadleKeyboardClick(e));
+    keyboardRow.addEventListener("click", this.hadleKeyboardClick);
 
-    for (let i = 0; i < this.state.letters.length; i++) {
-      const button = this.createLetterButtonElement(this.state.letters[i]);
+    for (let i = 0; i < this.state.keyboardLetters.length; i++) {
+      const button = this.createLetterButtonElement(
+        this.state.keyboardLetters[i]
+      );
       keyboardRow.appendChild(button);
     }
 
@@ -81,14 +109,6 @@ export class DOMWordRenderer implements IWordRenderer {
     button.textContent = letter;
 
     return button;
-  }
-
-  private addAnswerLetterElementToContainer(letter: string) {
-    const letterEl = document.createElement("div");
-    letterEl.classList.add(ClassNames.AnswerLetter);
-    letterEl.textContent = letter;
-
-    this.answerContainer.appendChild(letterEl);
   }
 
   private hadleKeyboardClick(e: MouseEvent): void {
@@ -122,12 +142,10 @@ export class DOMWordRenderer implements IWordRenderer {
     setTimeout(() => {
       target.classList.remove("error");
       this.isAnimationProcessed = false;
-    }, 1000);
+    }, 200);
   }
 
   private handleKeyDown = (e: KeyboardEvent): void => {
-    const key = e.key.toLowerCase();
-
     if (
       e.shiftKey ||
       [KeyCode.Tab, KeyCode.CapsLock].includes(e.code as KeyCode)
@@ -136,23 +154,29 @@ export class DOMWordRenderer implements IWordRenderer {
       return;
     }
 
-    const buttons = Array.from(
-      this.keyboardContainer.querySelectorAll(`.${ClassNames.AnswerLetter}`)
-    );
-    const firstButtonWithLetter = buttons.find((button) => {
-      return button.textContent === key;
-    }) as HTMLButtonElement | undefined;
+    const firstButtonWithLetter = this.findButtonByLetter(e.key);
 
     if (!firstButtonWithLetter) {
-      return this.handleChooseLetter(key, null);
+      return this.handleChooseLetter(e.key, null);
     }
 
     this.handleChooseLetter(
-      key,
+      e.key,
       getChildIndex(firstButtonWithLetter),
       () => this.handlePickLetterSuccess(firstButtonWithLetter),
       () => this.handlePickLetterFailure(firstButtonWithLetter)
     );
+  };
+
+  private findButtonByLetter(letter: string): HTMLButtonElement | undefined {
+    const buttons = Array.from(
+      this.keyboardContainer.querySelectorAll(`.${ClassNames.AnswerLetter}`)
+    );
+    const firstButtonWithLetter = buttons.find((button) => {
+      return button.textContent === letter;
+    }) as HTMLButtonElement | undefined;
+
+    return firstButtonWithLetter;
   }
 
   public finishTraining(statistics: Statistics): void {
@@ -164,26 +188,14 @@ export class DOMWordRenderer implements IWordRenderer {
     const ul = document.createElement("ul");
     const fragment = new DocumentFragment();
 
-    const items = {
-      perfectWordsCount: {
-        title: "Число собранных слов без ошибок",
-        value: statistics.perfectWordsCount,
-      },
-      errorsCount: {
-        title: "Число ошибок",
-        value: statistics.errorsCount,
-      },
-      theMostWrongWord: {
-        title: "Слово с самым большим числом ошибок",
-        value: statistics.theMostWrongWord,
-      },
-    };
-
-    Object.values(items).forEach((item) => {
+    let key: keyof typeof statistics;
+    for (key in statistics) {
       const li = document.createElement("li");
-      li.textContent = `${item.title}: ${item.value}`;
+      li.textContent = `${StatisticsDictionary[key]}: ${
+        statistics[key] || "-"
+      }`;
       fragment.append(li);
-    });
+    }
 
     ul.append(fragment);
 

@@ -1,4 +1,4 @@
-import { IWordProvider } from "./word-provider.interface";
+import { IWordProvider } from "./wordProvider.interface";
 
 export class RandomWordProvider implements IWordProvider {
   constructor(private words: string[]) {}

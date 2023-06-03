@@ -1,4 +1,4 @@
-import { IWordStorage } from "./word-storage.interface";
+import { IWordStorage } from "./wordStorage.interface";
 
 export class WordStorage implements IWordStorage {
   private words: string[] = [
