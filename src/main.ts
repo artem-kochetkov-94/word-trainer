@@ -3,7 +3,6 @@ import { DOMWordRenderer } from './app/domWordRenderer';
 import { RandomWordProvider, WordShuffler, WordStorage, CacheManager } from './services';
 import './styles.css';
 import { ClassNames } from './types/classNames';
-import '@total-typescript/ts-reset';
 
 const bootstrap = () => {
 	const wordStorage = new WordStorage();
