@@ -1,36 +1,36 @@
 .letter-button,
 .answer-letter {
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  width: 50px;
-  height: 50px;
-  margin: 0 5px;
-  border: none;
-  border-radius: 8px;
-  background: #0070e7;
-  color: #fff;
+	display: inline-flex;
+	justify-content: center;
+	align-items: center;
+	width: 50px;
+	height: 50px;
+	margin: 0 5px;
+	border: none;
+	border-radius: 8px;
+	background: #0070e7;
+	color: #fff;
 }
 
 @keyframes success {
-  from {
-    background-color: #0070e7;
-  }
-  to {
-    background-color: #29a545;
-  }
+	from {
+		background-color: #0070e7;
+	}
+	to {
+		background-color: #29a545;
+	}
 }
 
 .answer .answer-letter {
-  animation-name: success;
-  animation-duration: 0.5s;
-  background: #29a545;
+	animation-name: success;
+	animation-duration: 0.5s;
+	background: #29a545;
 }
 
 .error {
-  background: #ad2539;
+	background: #ad2539;
 }
 
 .answer.error .answer-letter {
-  background: #ad2539;
+	background: #ad2539;
 }
