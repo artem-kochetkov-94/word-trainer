@@ -37,7 +37,7 @@ const bootstrap = () => {
 	);
 
 	const wordTrainer = new WordTrainer(wordProvider, wordShuffler, domWordRenderer, cacheManager, {
-		wordCount: 2,
+		wordCount: 6,
 		maxErrors: 3,
 	});
 
