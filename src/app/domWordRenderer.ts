@@ -32,7 +32,7 @@ export class DOMWordRenderer implements IWordRenderer {
 
 	public async handleErrorScene(correctWord: string): Promise<void> {
 		return new Promise<void>((resolve) => {
-			this.answerContainer.classList.add('error');
+			this.answerContainer.classList.add(ClassNames.Error);
 			document.removeEventListener('keydown', this.handleKeyDown);
 
 			this.keyboardContainer.innerHTML = '';
@@ -42,18 +42,27 @@ export class DOMWordRenderer implements IWordRenderer {
 			});
 
 			setTimeout(() => {
-				this.answerContainer.classList.remove('error');
+				this.answerContainer.classList.remove(ClassNames.Error);
 				document.addEventListener('keydown', this.handleKeyDown);
 				resolve();
 			}, 1500);
 		});
 	}
 
-	private renderScene() {
+	private renderScene(): void {
 		this.clearScene();
 		this.renderHeader();
+
+		if (this.state.task.completedWithError) {
+			this.renderBadAnswer();
+			return;
+		}
+
+		if (!this.state.task.completed) {
+			this.renderKeyboard();
+		}
+
 		this.renderAnswer();
-		this.renderKeyboard();
 	}
 
 	private initState(options: State): void {
@@ -63,15 +72,23 @@ export class DOMWordRenderer implements IWordRenderer {
 	private clearScene(): void {
 		this.answerContainer.innerHTML = '';
 		this.keyboardContainer.innerHTML = '';
+		this.answerContainer.classList.remove(ClassNames.Error);
 	}
 
 	private renderHeader(): void {
-		this.currentStepContainer.innerHTML = String(this.state.currentStep);
+		this.currentStepContainer.innerHTML = String(this.state.currentStep + 1);
 		this.totalStepsContainer.innerHTML = String(this.state.stepsCount);
 	}
 
 	private renderAnswer(): void {
 		this.state.task.answer.split('').forEach((letter) => {
+			this.addAnswerLetterElementToContainer(letter);
+		});
+	}
+
+	private renderBadAnswer(): void {
+		this.answerContainer.classList.add(ClassNames.Error);
+		this.state.task.correctWord.split('').forEach((letter) => {
 			this.addAnswerLetterElementToContainer(letter);
 		});
 	}
@@ -144,7 +161,17 @@ export class DOMWordRenderer implements IWordRenderer {
 	}
 
 	private handleKeyDown = (e: KeyboardEvent): void => {
-		if (e.shiftKey || [KeyCode.Tab, KeyCode.CapsLock].includes(e.code)) {
+		if (
+			e.shiftKey ||
+			[
+				KeyCode.Tab,
+				KeyCode.CapsLock,
+				KeyCode.ArrowUp,
+				KeyCode.ArrowDown,
+				KeyCode.ArrowLeft,
+				KeyCode.ArrowRight,
+			].includes(e.code)
+		) {
 			e.preventDefault();
 			return;
 		}
