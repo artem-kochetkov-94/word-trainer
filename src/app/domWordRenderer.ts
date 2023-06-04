@@ -110,9 +110,9 @@ export class DOMWordRenderer implements IWordRenderer {
 	}
 
 	private hadleKeyboardClick = (e: MouseEvent): void => {
-		const target = e.target as HTMLButtonElement;
+		const target = e.target;
 
-		if (!target.classList.contains('letter-button')) {
+		if (!(target instanceof HTMLButtonElement) || !target.classList.contains('letter-button')) {
 			return;
 		}
 
@@ -144,7 +144,7 @@ export class DOMWordRenderer implements IWordRenderer {
 	}
 
 	private handleKeyDown = (e: KeyboardEvent): void => {
-		if (e.shiftKey || [KeyCode.Tab, KeyCode.CapsLock].includes(e.code as KeyCode)) {
+		if (e.shiftKey || [KeyCode.Tab, KeyCode.CapsLock].includes(e.code)) {
 			e.preventDefault();
 			return;
 		}
