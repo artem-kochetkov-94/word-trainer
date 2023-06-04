@@ -1,3 +1,3 @@
 export interface IWordShuffler {
-  shuffle(word: string): string;
+	shuffle(word: string): string;
 }

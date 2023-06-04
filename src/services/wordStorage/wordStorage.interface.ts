@@ -1,3 +1,3 @@
 export interface IWordStorage {
-  getWords(): string[];
+	getWords(): string[];
 }

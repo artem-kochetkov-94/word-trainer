@@ -1,2 +1,2 @@
-export * from "./wordProvider.interface";
-export * from "./wordProvider.service";
+export * from './wordProvider.interface';
+export * from './wordProvider.service';
