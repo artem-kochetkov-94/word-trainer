@@ -32,5 +32,6 @@
 }
 
 .answer.error .answer-letter {
+	animation: none;
 	background: #ad2539;
 }

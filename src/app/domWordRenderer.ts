@@ -103,13 +103,13 @@ export class DOMWordRenderer implements IWordRenderer {
 
 	private createLetterButtonElement(letter: string): HTMLButtonElement {
 		const button = document.createElement('button');
-		button.classList.add(ClassNames.AnswerLetter);
+		button.classList.add(ClassNames.LetterButton);
 		button.textContent = letter;
 
 		return button;
 	}
 
-	private hadleKeyboardClick(e: MouseEvent): void {
+	private hadleKeyboardClick = (e: MouseEvent): void => {
 		const target = e.target as HTMLButtonElement;
 
 		if (!target.classList.contains('letter-button')) {
@@ -122,7 +122,7 @@ export class DOMWordRenderer implements IWordRenderer {
 			() => this.handlePickLetterSuccess(target),
 			() => this.handlePickLetterFailure(target),
 		);
-	}
+	};
 
 	private handlePickLetterSuccess(target: HTMLButtonElement): void {
 		target.remove();
@@ -165,7 +165,7 @@ export class DOMWordRenderer implements IWordRenderer {
 
 	private findButtonByLetter(letter: string): HTMLButtonElement | undefined {
 		const buttons = Array.from(
-			this.keyboardContainer.querySelectorAll(`.${ClassNames.AnswerLetter}`),
+			this.keyboardContainer.querySelectorAll(`.${ClassNames.LetterButton}`),
 		);
 		const firstButtonWithLetter = buttons.find((button) => {
 			return button.textContent === letter;
