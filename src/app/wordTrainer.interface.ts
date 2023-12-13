@@ -23,6 +23,8 @@ export interface Task {
 	shuffledLetters: string;
 	answer: string;
 	errorCount: number;
+	completed: boolean;
+	completedWithError: boolean;
 }
 
 export interface WordTrainerState {
